@@ -1,0 +1,7 @@
+base_dir: C:\Users\ScipioneFrancesco\polybox - Francesco Scipione (francesco.scipione@protonmail.ch)@polybox.ethz.ch\01_Inspire\01_Projects\01_Via_Integrity\02_Code\process_pipeline\process_pipeline
+data_dir: C:\Users\ScipioneFrancesco\polybox - Francesco Scipione (francesco.scipione@protonmail.ch)@polybox.ethz.ch\01_Inspire\01_Projects\01_Via_Integrity\02_Code\process_pipeline\data
+input_dir: C:\Users\ScipioneFrancesco\polybox - Francesco Scipione (francesco.scipione@protonmail.ch)@polybox.ethz.ch\01_Inspire\01_Projects\01_Via_Integrity\02_Code\process_pipeline\data\input
+output_dir: C:\Users\ScipioneFrancesco\polybox - Francesco Scipione (francesco.scipione@protonmail.ch)@polybox.ethz.ch\01_Inspire\01_Projects\01_Via_Integrity\02_Code\process_pipeline\data\output
+intermediate_dir: C:\Users\ScipioneFrancesco\polybox - Francesco Scipione (francesco.scipione@protonmail.ch)@polybox.ethz.ch\01_Inspire\01_Projects\01_Via_Integrity\02_Code\process_pipeline\data\intermediate
+project_name: Process Pipeline
+version: 1.0.0
