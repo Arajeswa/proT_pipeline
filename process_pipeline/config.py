@@ -12,7 +12,7 @@ with open(join(parent_path,"config/config.yaml"), "r") as f:
 def get_folders(key:str="local"):
 
     options = {"local"  : "base_dir_local",
-               "cluser" : "base_dir_cluster"}
+               "cluster" : "base_dir_cluster"}
     
     BASE_DIR = config[options[key]]
     DATA_DIR = join(BASE_DIR,"data")
