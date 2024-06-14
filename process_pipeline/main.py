@@ -9,27 +9,17 @@ from data_trimmer import data_trimmer
 from data_post_processing import data_post_processing
 from argparse import ArgumentParser
 
-
-
-
-
 def main(args):
-    
-    
-    DATA_DIR,INPUT_DIR,OUTPUT_DIR,INTERMEDIATE_DIR = get_folders(args.machine)
-    
+    _,INPUT_DIR,OUTPUT_DIR,INTERMEDIATE_DIR = get_folders(args.machine)
     
     filename_sel  = join(INTERMEDIATE_DIR, "lookup_selected.xlsx")
     filename_look = join(INTERMEDIATE_DIR, "lookup.xlsx")
-    
-    
     
     # create lookup table
     if args.makelookup:
         generate_lookup(filename_look)
         print("The new lookup has been generated!")
         sys.exit(0)
-        
         
     #load processes
     _, processes = get_processes(INPUT_DIR,filename_sel)
@@ -41,7 +31,6 @@ def main(args):
         test_id = df_ist["id"].unique()[:100]
         df_ist = df_ist.set_index("id").loc[test_id].reset_index()
     
-    
     if args.runprocess:
         # get the booking file
         df_book = get_booking(INPUT_DIR)
@@ -52,14 +41,12 @@ def main(args):
         
         # check dimensions and trim
         df_ist_tr = data_trimmer(df_x=df_pc.copy(), df_y=df_ist.copy(), df_miss=df_book_mis.copy(), 
-                                save_path=INTERMEDIATE_DIR, save_file=True)
-        
+                                save_path=INTERMEDIATE_DIR, save_file=True)   
     else:
         df_pc = pd.read_csv(join(INTERMEDIATE_DIR,"x_prochain.csv"), sep=",")
         df_book_mis = pd.read_csv(join(INTERMEDIATE_DIR, "booking_missing.csv"), sep=",")
         df_pro_mis = pd.read_csv(join(INTERMEDIATE_DIR, "process_missing.csv"), sep=",")
         
-    
     # check that ids are aligned
     df_pc = df_pc.sort_values("id")
     df_ist_tr = df_ist_tr.sort_values("id")
@@ -67,10 +54,12 @@ def main(args):
     if all(df_pc["id"].drop_duplicates().to_numpy() == df_ist_tr["id"].drop_duplicates().to_numpy()):
         print("All IDs are aligned! Proceed conversion to numpy arrays")
     
-    
         # post processing and conversion to numpy
         X_np = data_post_processing(df=df_pc, time_label="Time",id_label="id",sort_label="PaPos",features=["Value","Pos"],max_seq_len=1515)
         Y_np = data_post_processing(df=df_ist_tr, time_label="CreateDate",id_label="id",sort_label="Zyklus",features=["Value","Zyklus"],max_seq_len=250)
+        
+        print("Dataset files successfully generated.")
+        print(f"X_np shape: {X_np.shape}, Y_np shape: {Y_np.shape}")
     
         # save numpy arrays
         with open(join(OUTPUT_DIR, "X_np.npy"), 'wb') as f:
@@ -79,17 +68,15 @@ def main(args):
         with open(join(OUTPUT_DIR, "Y_np.npy"), 'wb') as f:
             np.save(f, Y_np)
             
-        print("Dataset files successfully generated.")
-        print(f"X_np shape: {X_np.shape}, Y_np shape: {Y_np.shape}")
+        print("Dataset files saved, end of the program")
         
         
 if __name__ == '__main__':
     parser = ArgumentParser(
         prog='Process Pipeline',
         description='The program builds sequential datasets from processes and booking table',
-        epilog='Text at the bottom of help'
-    )
-    # parser.add_argument("--debug", default=False)
+        epilog='Text at the bottom of help')
+    
     parser.add_argument("-dr","--devrun",
                         type=bool,
                         choices=[True,False],
