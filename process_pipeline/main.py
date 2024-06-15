@@ -10,7 +10,13 @@ from data_post_processing import data_post_processing
 from argparse import ArgumentParser
 
 def main(args):
-    _,INPUT_DIR,OUTPUT_DIR,INTERMEDIATE_DIR = get_folders(args.machine)
+    
+    if args.cluster:
+        machine = "cluster"
+    else:
+        machine = "local"
+    
+    _,INPUT_DIR,OUTPUT_DIR,INTERMEDIATE_DIR = get_folders(machine)
     
     filename_sel  = join(INTERMEDIATE_DIR, "lookup_selected.xlsx")
     filename_look = join(INTERMEDIATE_DIR, "lookup.xlsx")
@@ -31,7 +37,14 @@ def main(args):
         test_id = df_ist["id"].unique()[:100]
         df_ist = df_ist.set_index("id").loc[test_id].reset_index()
     
-    if args.runprocess:
+    if args.readfile:
+        print("Reading the process chain from file")
+        df_pc = pd.read_csv(join(INTERMEDIATE_DIR,"x_prochain.csv"), sep=",")
+        df_book_mis = pd.read_csv(join(INTERMEDIATE_DIR, "booking_missing.csv"), sep=",")
+        df_pro_mis = pd.read_csv(join(INTERMEDIATE_DIR, "process_missing.csv"), sep=",")
+        df_ist_tr = pd.read_csv(join(INTERMEDIATE_DIR, "y_trimmed.csv"), sep=",")
+    else:
+        print("Generating the process chain...")
         # get the booking file
         df_book = get_booking(INPUT_DIR)
         
@@ -42,10 +55,6 @@ def main(args):
         # check dimensions and trim
         df_ist_tr = data_trimmer(df_x=df_pc.copy(), df_y=df_ist.copy(), df_miss=df_book_mis.copy(), 
                                 save_path=INTERMEDIATE_DIR, save_file=True)   
-    else:
-        df_pc = pd.read_csv(join(INTERMEDIATE_DIR,"x_prochain.csv"), sep=",")
-        df_book_mis = pd.read_csv(join(INTERMEDIATE_DIR, "booking_missing.csv"), sep=",")
-        df_pro_mis = pd.read_csv(join(INTERMEDIATE_DIR, "process_missing.csv"), sep=",")
         
     # check that ids are aligned
     df_pc = df_pc.sort_values("id")
@@ -55,8 +64,23 @@ def main(args):
         print("All IDs are aligned! Proceed conversion to numpy arrays")
     
         # post processing and conversion to numpy
-        X_np = data_post_processing(df=df_pc, time_label="Time",id_label="id",sort_label="PaPos",features=["Value","Pos"],max_seq_len=1515)
-        Y_np = data_post_processing(df=df_ist_tr, time_label="CreateDate",id_label="id",sort_label="Zyklus",features=["Value","Zyklus"],max_seq_len=250)
+        X_np = data_post_processing(
+            df=df_pc, 
+            time_label="Time",
+            id_label="id",
+            sort_label="PaPos",
+            features=["Value","Pos"],
+            max_seq_len=args.seqlenx,
+            cluster=args.cluster)
+        
+        Y_np = data_post_processing(
+            df=df_ist_tr, 
+            time_label="CreateDate",
+            id_label="id",
+            sort_label="Zyklus",
+            features=["Value","Zyklus"],
+            max_seq_len=args.seqleny,
+            cluster=args.cluster)
         
         print("Dataset files successfully generated.")
         print(f"X_np shape: {X_np.shape}, Y_np shape: {Y_np.shape}")
@@ -83,12 +107,6 @@ if __name__ == '__main__':
                         default=False,
                         help='Run a quick test for debugging purpose')
     
-    parser.add_argument("-m","--machine", 
-                        type=str,
-                        choices=["local","cluster"],
-                        default="local",
-                        help="select local or cluster")
-    
     parser.add_argument("-mkl","--makelookup", 
                         type=bool,
                         choices=[True,False],
@@ -100,6 +118,24 @@ if __name__ == '__main__':
                         choices=[True,False],
                         default=True,
                         help="build the process chains")
+    
+    parser.add_argument("-rf","--readfile", 
+                        action="store_true",
+                        help="reads existing files")
+    
+    parser.add_argument("-c","--cluster", 
+                        action="store_true",
+                        help="running on cluster")
+    
+    parser.add_argument("-slx","--seqlenx", 
+                        action="store_const",
+                        const=1560,
+                        help="maximum x sequence length")
+    
+    parser.add_argument("-sly","--seqleny", 
+                        action="store_const",
+                        const=250,
+                        help="maximum y sequence length")
     
     args = parser.parse_args()
     main(args)
