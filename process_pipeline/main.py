@@ -117,12 +117,6 @@ if __name__ == '__main__':
                         default=False,
                         help="generate new lookup table and exit")
     
-    parser.add_argument("--runprocess", 
-                        type=bool,
-                        choices=[True,False],
-                        default=True,
-                        help="build the process chains")
-    
     parser.add_argument("--readfile", 
                         action="store_true",
                         default=False,
