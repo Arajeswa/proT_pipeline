@@ -72,6 +72,7 @@ def main(args):
         
         # get absolute positions and missing values
         df_lev = level_sequences(df_pc)
+        df_lev.to_csv(join(INTERMEDIATE_DIR,"x_prochain_lev"))
         
         # post processing and conversion to numpy
         X_np = data_post_processing(
