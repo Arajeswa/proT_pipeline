@@ -64,6 +64,7 @@ def sequence_builder(
                             for step in df_sel["PaPosNumber"]:
                                 
                                 df_temp, mis = get_data_step(wa,step,processes,filename_sel)       # get data for the current WA, Version and PaPosNumber
+                                df_temp = df_temp.drop_duplicates(subset="Variable")               # for each step, variables repeat once
                                 
                                 if mis is not None:
                                     process_mis.append(mis)

@@ -10,6 +10,9 @@ from level_sequences import level_sequences
 from data_post_processing import data_post_processing
 from argparse import ArgumentParser
 
+ist_design_label = "SapNummer"
+ist_version_label = "Version"
+
 def main(args):
     
     if args.cluster:
@@ -30,13 +33,17 @@ def main(args):
         
     #load processes
     _, processes = get_processes(INPUT_DIR,filename_sel)
-    
+        
     # read Y (IST) file
     df_ist = pd.read_csv(join(INTERMEDIATE_DIR,"y_ist.csv"), sep=",")
     
     if args.devrun:
         test_id = df_ist["id"].unique()[:100]
         df_ist = df_ist.set_index("id").loc[test_id].reset_index()
+        
+    if args.target_design is not None:
+        df_ist = df_ist[df_ist[ist_design_label]==args.target_design].reset_index()
+        print(f"Target Design mode: design {args.target_design} selected from target data")
     
     if args.readfile:
         print("Reading the process chain from file")
@@ -71,8 +78,9 @@ def main(args):
         print("All IDs are aligned! Proceed conversion to numpy arrays")
         
         # get absolute positions and missing values
-        df_lev = level_sequences(df_pc)
-        df_lev.to_csv(join(INTERMEDIATE_DIR,"x_prochain_lev"))
+        df_lev,max_seq_len_x = level_sequences(df=df_pc,processes=processes)
+        df_lev.to_csv(join(INTERMEDIATE_DIR,"x_prochain_lev.csv"))
+        print(f"Leveling done! Maximum sequence length = {max_seq_len_x}")
         
         # post processing and conversion to numpy
         X_np = data_post_processing(
@@ -81,7 +89,7 @@ def main(args):
             id_label="id",
             sort_label="PaPos",
             features=["Value","Pos"],
-            max_seq_len=args.seqlenx,
+            max_seq_len=max_seq_len_x,
             cluster=args.cluster)
         
         Y_np = data_post_processing(
@@ -111,6 +119,11 @@ if __name__ == '__main__':
         prog='Process Pipeline',
         description='The program builds sequential datasets from processes and booking table',
         epilog='Text at the bottom of help')
+    
+    parser.add_argument("--target_design",
+                        action="store_const",
+                        const=426816,
+                        help='Run a quick test for debugging purpose')
     
     parser.add_argument("--devrun",
                         action="store_true",

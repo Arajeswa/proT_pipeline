@@ -52,7 +52,8 @@ def data_trimmer(df_x, df_y, df_miss, save_path:str ,save_file:bool=False):
     
     # trim and save    
     if pass_flag:
-        df_y_tr = df_y[np.logical_not([df_y["id"].iloc[i] in seen_missing_id for i in df_y.index])]
+        #df_y_tr = df_y[np.logical_not([df_y["id"].iloc[i] in seen_missing_id for i in df_y.index])]
+        df_y_tr = df_y[[df_y["id"].iloc[i] not in seen_missing_id for i in df_y.index]]
         df_y_tr = df_y_tr.sort_values("id")
         
         if df_y_tr["id"].all() == df_x["id"].all():

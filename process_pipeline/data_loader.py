@@ -1,8 +1,9 @@
+from typing import List
 from os.path import dirname, abspath, join
 import sys
 sys.path.append((dirname(abspath(__file__))))
 
-from core.modules import Process,get_df_lookup
+from core.modules import Process, get_df_lookup
 from utils import fix_format_columns
 import pandas as pd
 
@@ -89,10 +90,11 @@ def generate_lookup(filename_look):
         for process in processes:
             get_df_lookup(process).to_excel(writer, sheet_name=process.process_label)
 
-def get_processes(input_data_path,filename_sel):
+def get_processes(input_data_path,filename_sel,processes:List[Process] = processes):
     for process in processes:
         process.get_df(input_data_path)
-        #process.normalize_df(filename_sel)
+        process.get_variables_list(filename_sel)
+        process.normalize_df(filename_sel)
         #process.convert_timestamp()
     
     return processes_list, processes

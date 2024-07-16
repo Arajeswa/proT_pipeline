@@ -28,7 +28,7 @@ class Process():
         self.header = header
         self.flag = 0
         
-    def get_df(self,input_data_path):
+    def get_df(self,input_data_path)->None:
         self.df = pd.read_csv(input_data_path+self.filename, sep=self.sep,header=self.header,low_memory=False)
         self.flag = 1
         
@@ -51,3 +51,9 @@ class Process():
         
         for d in self.date_label:
             self.df[d] = pd.to_datetime(self.df[d],format=self.date_format)
+            
+    def get_variables_list(self, filename_sel)->None:
+        self.df_lookup = pd.read_excel(filename_sel,sheet_name=self.process_label)
+        self.variables_list = self.df_lookup[self.df_lookup["Select"]]["variable"].tolist()
+            
+            

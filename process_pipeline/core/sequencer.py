@@ -31,7 +31,7 @@ class Sequencer():
             fea = df.set_index(id_label).loc[id].sort_values(sort_label)[j].tolist()
             n_zeros = max_seq_len-len(fea)
             if n_zeros < 0:
-                raise ValueError(f"Choose a maximum sequence length > {len(fea)}")
+                raise ValueError(f"Choose a maximum sequence length > {len(fea)}, id {id} overshoots!")
             fea.extend([0 for _ in range(n_zeros)])
             arr_h.append(fea)
 

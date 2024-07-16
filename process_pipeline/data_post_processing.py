@@ -1,10 +1,19 @@
 import numpy as np
+import pandas as pd
 import concurrent.futures
+from typing import List
 
 from core.modules import explode_time_components
 from core.sequencer import Sequencer
 
-def data_post_processing(df,time_label,id_label,sort_label,features,max_seq_len,cluster):
+def data_post_processing(
+    df:pd.DataFrame,
+    time_label: str,
+    id_label: str,
+    sort_label: str,
+    features: List[str],
+    max_seq_len: int,
+    cluster: bool):
     
     # create time features
     df_tok,time_cmp = explode_time_components(df,time_label)

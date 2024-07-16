@@ -183,3 +183,7 @@ class Process():
         
         for d in self.date_label:
             self.df[d] = pd.to_datetime(self.df[d],format=self.date_format)
+            
+    def get_variables_list(self, filename_sel)->None:
+        self.df_lookup = pd.read_excel(filename_sel,sheet_name=self.process_label)
+        self.variables_list = self.df_lookup[self.df_lookup["Select"]]["variable"].tolist()
