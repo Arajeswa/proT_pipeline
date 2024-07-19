@@ -1,6 +1,9 @@
-from os.path import dirname, abspath
+from os import getcwd
+from os.path import dirname
 import sys
-sys.path.append(dirname(dirname(abspath(__file__))))
+ROOT_DIR = dirname(getcwd())
+sys.path.append(ROOT_DIR)
+
 from process_pipeline.data_loader import get_processes
 
 

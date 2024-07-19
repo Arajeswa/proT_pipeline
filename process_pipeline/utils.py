@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def fix_duplicate_columns(df):
+def fix_duplicate_columns(df:pd.DataFrame)->None:
     """Fixes n-times repeated names from a pandas DataFrame adding a suffix "_n"
     
     Example: df.columns = Time, Value, Time, Variable, Time
@@ -31,7 +31,7 @@ def fix_duplicate_columns(df):
     
     df.columns = new_cols
     
-def fix_format_columns(df):
+def fix_format_columns(df:pd.DataFrame)->pd.DataFrame:
     """Fix repeated column names of a pandas DataFrame
     
     Example: df.columns = Time Time, Value Value, First Variable First Variable
@@ -47,7 +47,7 @@ def fix_format_columns(df):
     
     return df
 
-def nested_dict_from_pandas(df):
+def nested_dict_from_pandas(df:pd.DataFrame)->dict:
     """Generates a nested dictionary from the pandas DataFrame MultiIndex
 
     Args:

@@ -46,7 +46,7 @@ def get_data_step(
     wa:str,
     step:int,
     processes:list,
-    filename_sel:str
+    filepath_sel:str
     ):
     """Looks for the current step within the processes and assembles a 
 
@@ -79,7 +79,7 @@ def get_data_step(
             if step in step_list:
 
                 # open the lookup table
-                df_lookup = pd.read_excel(filename_sel,sheet_name=pro.process_label)
+                df_lookup = pd.read_excel(filepath_sel,sheet_name=pro.process_label)
 
                 # handle multiple machines on the same dataframe
                 if pro.machine_label is not None:

@@ -1,36 +1,36 @@
 import numpy as np
+from labels import *
 
 def data_trimmer(df_x, df_y, df_miss, save_path:str ,save_file:bool=False):
     
-    len_Y = len(df_y["id"].unique()) 
-    len_X = len(df_x["id"].unique())
-    
+    len_Y = len(df_y[target_id_label].unique()) 
+    len_X = len(df_x[input_id_label].unique())
     
     # seen missing id during the assembly of the dataset
     seen_missing_id = []
     
     for i in df_miss.index:
         
-        sap = df_miss.at[i,"Design"]
-        ver = df_miss.at[i,"Version"]
-        wa = df_miss.at[i,"Batch"]
+        sap = df_miss.at[i,input_design_label]
+        ver = df_miss.at[i,input_version_label]
+        wa = df_miss.at[i,input_batch_label]
     
         if ver == "ALL":
-            mis = df_y.set_index(["SapNummer"]).loc[sap]["id"].unique().tolist()
+            mis = df_y.set_index([target_design_label]).loc[sap][target_id_label].unique().tolist()
                 
         elif wa == "ALL":
-            mis = df_y.set_index(["SapNummer","Version"]).loc[sap].loc[ver]["id"].unique().tolist()
+            mis = df_y.set_index([target_design_label,target_version_label]).loc[sap].loc[ver][target_id_label].unique().tolist()
             
         elif ver != "ALL" and wa != "ALL":
-            mis = df_y.set_index(["SapNummer","Version","WA"]).loc[sap].loc[ver].loc[wa]["id"].unique().tolist()
+            mis = df_y.set_index([target_design_label,target_version_label,target_batch_label]).loc[sap].loc[ver].loc[wa][target_id_label].unique().tolist()
             
         seen_missing_id.extend(mis)
     
     
     # actual missing id
     actual_missing_id = []
-    for i in df_y["id"].unique():
-        if i not in df_x["id"].tolist():
+    for i in df_y[target_id_label].unique():
+        if i not in df_x[input_id_label].tolist():
             actual_missing_id.append(i)
             
             
@@ -53,15 +53,15 @@ def data_trimmer(df_x, df_y, df_miss, save_path:str ,save_file:bool=False):
     # trim and save    
     if pass_flag:
         #df_y_tr = df_y[np.logical_not([df_y["id"].iloc[i] in seen_missing_id for i in df_y.index])]
-        df_y_tr = df_y[[df_y["id"].iloc[i] not in seen_missing_id for i in df_y.index]]
-        df_y_tr = df_y_tr.sort_values("id")
+        df_y_tr = df_y[[df_y[target_id_label].iloc[i] not in seen_missing_id for i in df_y.index]]
+        df_y_tr = df_y_tr.sort_values(target_id_label)
         
-        if df_y_tr["id"].all() == df_x["id"].all():
-            new_Y_length = len(df_y_tr["id"].unique())
+        if df_y_tr[target_id_label].all() == df_x["id"].all():
+            new_Y_length = len(df_y_tr[target_id_label].unique())
             print(f"The sizes match! Y size {new_Y_length} = {len_X} X size. The new trimmed Y file has been saved!")
             
             if save_file:
-                df_y_tr.to_csv(save_path + "y_trimmed.csv", sep=",")
+                df_y_tr.to_csv(save_path+target_trimmed_filename, sep=standard_sep)
             
         else:
             raise ValueError("The X and Y size still don't match!")

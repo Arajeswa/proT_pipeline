@@ -1,7 +1,14 @@
 from typing import List
-from os.path import dirname, abspath, join
+# from os.path import dirname, abspath, join
+# import sys
+# sys.path.append((dirname(abspath(__file__))))
+
+
+from os import getcwd
+from os.path import dirname, join
 import sys
-sys.path.append((dirname(abspath(__file__))))
+ROOT_DIR = dirname(getcwd())
+sys.path.append(ROOT_DIR)
 
 from core.modules import Process, get_df_lookup
 from utils import fix_format_columns

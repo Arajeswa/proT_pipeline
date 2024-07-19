@@ -1,9 +1,11 @@
 import pandas as pd
-from os.path import join
-from os.path import dirname
+
+from os import getcwd
+from os.path import dirname, join
 import sys
-ROOT_DIR = dirname(dirname(__file__))
+ROOT_DIR = dirname(getcwd())
 sys.path.append(ROOT_DIR)
+
 from process_pipeline.data_loader import get_processes
 from process_pipeline.level_sequences import *
 
@@ -16,12 +18,6 @@ _, processes = get_processes(INPUT_DIR,filename_sel)
 
 #load processes
 df_pc = pd.read_csv(join(INTERMEDIATE_DIR,"x_prochain.csv"), sep=",")
-
-
-
-
-
-
 
 templates_dict = get_template(df=df_pc,processes=processes)
 

@@ -1,19 +1,18 @@
 import pandas as pd
-import os
-from pathlib import Path
-from os.path import dirname, abspath,join
+
+from os import getcwd
+from os.path import dirname, join
 import sys
-sys.path.append(dirname(dirname(abspath(__file__))))
+ROOT_DIR = dirname(getcwd())
+sys.path.append(ROOT_DIR)
+
 from process_pipeline.core.modules import get_data_step
 from process_pipeline.data_loader import get_processes, get_booking
 from process_pipeline.utils import nested_dict_from_pandas
 
-#root = dirname(os.getcwd())
-root =Path(os.getcwd()).parent
-#format = "%m/%d/%y %I:%M %p"
-input_data_path = join(root,"data/input/")
-intermediate_data_path = join(root,"data/intermediate/")
-output_data_path = join(root,"data/output/")
+input_data_path = join(ROOT_DIR,"data/input/")
+intermediate_data_path = join(ROOT_DIR,"data/intermediate/")
+output_data_path = join(ROOT_DIR,"data/output/")
 
 filename_sel  = intermediate_data_path +"lookup_selected.xlsx"
 filename_look = intermediate_data_path +"lookup.xlsx"

@@ -1,103 +1,104 @@
 import pandas as pd
 import numpy as np
 import sys
-from os.path import join
-from config import get_folders
 from data_loader import get_processes,get_booking,generate_lookup
 from sequence_builder import sequence_builder
 from data_trimmer import data_trimmer
 from level_sequences import level_sequences
 from data_post_processing import data_post_processing
+from labels import *
 from argparse import ArgumentParser
 
-ist_design_label = "SapNummer"
-ist_version_label = "Version"
+from os import getcwd
+from os.path import dirname, join
+import sys
+ROOT_DIR = dirname(getcwd())
+sys.path.append(ROOT_DIR)
+
 
 def main(args):
     
-    if args.cluster:
-        machine = "cluster"
-    else:
-        machine = "local"
+    INPUT_DIR,OUTPUT_DIR,INTERMEDIATE_DIR = get_dirs(ROOT_DIR)
+    print("Root directory: ",ROOT_DIR)
     
-    _,INPUT_DIR,OUTPUT_DIR,INTERMEDIATE_DIR = get_folders(machine)
-    
-    filename_sel  = join(INTERMEDIATE_DIR, "lookup_selected.xlsx")
-    filename_look = join(INTERMEDIATE_DIR, "lookup.xlsx")
+    filepath_selected = join(INTERMEDIATE_DIR, selected_filename)
+    filepath_lookup = join(INTERMEDIATE_DIR, lookup_filename)
+    filepath_target = join(INTERMEDIATE_DIR, target_filename)
     
     # create lookup table
     if args.makelookup:
-        generate_lookup(filename_look)
+        generate_lookup(filepath_lookup)
         print("The new lookup has been generated!")
         sys.exit(0)
         
     #load processes
-    _, processes = get_processes(INPUT_DIR,filename_sel)
+    _, processes = get_processes(INPUT_DIR,filepath_selected)
         
     # read Y (IST) file
-    df_ist = pd.read_csv(join(INTERMEDIATE_DIR,"y_ist.csv"), sep=",")
+    df_ist = pd.read_csv(filepath_target, sep=target_sep)
     
     if args.devrun:
-        test_id = df_ist["id"].unique()[:100]
-        df_ist = df_ist.set_index("id").loc[test_id].reset_index()
+        test_id = df_ist[target_id_label].unique()[:100]
+        df_ist = df_ist.set_index(target_id_label).loc[test_id].reset_index()
         
     if args.target_design is not None:
-        df_ist = df_ist[df_ist[ist_design_label]==args.target_design].reset_index()
+        df_ist = df_ist[df_ist[target_design_label]==args.target_design].reset_index()
         print(f"Target Design mode: design {args.target_design} selected from target data")
     
     if args.readfile:
         print("Reading the process chain from file")
-        df_pc = pd.read_csv(join(INTERMEDIATE_DIR,"x_prochain.csv"), sep=",")
-        df_book_mis = pd.read_csv(join(INTERMEDIATE_DIR, "booking_missing.csv"), sep=",")
-        df_pro_mis = pd.read_csv(join(INTERMEDIATE_DIR, "process_missing.csv"), sep=",")
-        df_ist_tr = pd.read_csv(join(INTERMEDIATE_DIR, "y_trimmed.csv"), sep=",")
+        df_pc = pd.read_csv(join(INTERMEDIATE_DIR,input_raw_filename), sep=",")
+        df_book_mis = pd.read_csv(join(INTERMEDIATE_DIR, booking_missing_filename), sep=",")
+        df_ist_tr = pd.read_csv(join(INTERMEDIATE_DIR, target_trimmed_filename), sep=",")
     else:
         print("Generating the process chain...")
         # get the booking file
         df_book = get_booking(INPUT_DIR)
         
         # get process sequence
-        df_pc, df_book_mis,_ = sequence_builder(
-            df_query=df_book.copy(), 
-            df_keys=df_ist.copy(), 
-            keys_branches=["SapNummer","Version","WA","id"],
-            processes=processes, 
-            saving_path=INTERMEDIATE_DIR, 
-            filename_sel=filename_sel, 
-            save_file=True)
+        df_pc, df_book_mis,df_pro_mis = sequence_builder(
+            df_key=df_book.copy(), 
+            df_query=df_ist.copy(), 
+            query_branches=(target_design_label,target_version_label,target_batch_label,target_id_label),
+            processes=processes,
+            filepath_selected = filepath_selected)
+        
+        df_book_mis.to_csv(join(INTERMEDIATE_DIR, booking_missing_filename), sep=standard_sep)
+        df_pro_mis.to_csv(join(INTERMEDIATE_DIR,process_missing_filename), sep=standard_sep)
+        df_pc.to_csv(join(INTERMEDIATE_DIR,input_raw_filename), sep=standard_sep)
         
         # check dimensions and trim
         df_ist_tr = data_trimmer(df_x=df_pc.copy(), df_y=df_ist.copy(), df_miss=df_book_mis.copy(), 
                                 save_path=INTERMEDIATE_DIR, save_file=True)   
         
     # check that ids are aligned
-    df_pc_sort = df_pc.sort_values("id")
-    df_ist_tr_sort = df_ist_tr.sort_values("id")
+    df_pc_sort = df_pc.sort_values(target_id_label)
+    df_ist_tr_sort = df_ist_tr.sort_values(target_id_label)
     
-    if all(df_pc_sort["id"].drop_duplicates().to_numpy() == df_ist_tr_sort["id"].drop_duplicates().to_numpy()):
+    if all(df_pc_sort[target_id_label].drop_duplicates().to_numpy() == df_ist_tr_sort[target_id_label].drop_duplicates().to_numpy()):
         print("All IDs are aligned! Proceed conversion to numpy arrays")
         
         # get absolute positions and missing values
         df_lev,max_seq_len_x = level_sequences(df=df_pc,processes=processes)
-        df_lev.to_csv(join(INTERMEDIATE_DIR,"x_prochain_lev.csv"))
+        df_lev.to_csv(join(INTERMEDIATE_DIR,input_leveled_filename))
         print(f"Leveling done! Maximum sequence length = {max_seq_len_x}")
         
         # post processing and conversion to numpy
         X_np = data_post_processing(
             df=df_lev, 
-            time_label="Time",
-            id_label="id",
-            sort_label="PaPos",
-            features=["Value","Pos"],
+            time_label=input_time_label,
+            id_label=input_id_label,
+            sort_label=input_step_label,
+            features=[input_value_label,input_abs_pos_label],
             max_seq_len=max_seq_len_x,
             cluster=args.cluster)
         
         Y_np = data_post_processing(
             df=df_ist_tr, 
-            time_label="CreateDate",
-            id_label="id",
-            sort_label="Zyklus",
-            features=["Value","Zyklus"],
+            time_label=target_time_label,
+            id_label=target_id_label,
+            sort_label=target_pos_label,
+            features=[target_value_label,target_pos_label],
             max_seq_len=args.seqleny,
             cluster=args.cluster)
         
@@ -155,5 +156,6 @@ if __name__ == '__main__':
                         help="maximum y sequence length")
     
     args = parser.parse_args()
+    
     main(args)
         

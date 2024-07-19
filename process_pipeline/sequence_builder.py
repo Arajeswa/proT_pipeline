@@ -4,16 +4,15 @@ from os.path import join
 from tqdm import tqdm
 from core.modules import get_data_step
 from utils import nested_dict_from_pandas
+from labels import *
 
 
 def sequence_builder(
+    df_key:pd.DataFrame, 
     df_query:pd.DataFrame, 
-    df_keys:pd.DataFrame, 
-    keys_branches:list, 
-    processes:list, 
-    saving_path:str, 
-    filename_sel:str,
-    save_file:bool=False, 
+    query_branches:tuple, 
+    processes:list,
+    filepath_selected:str, 
     verbose:bool=False):
     
     """Build a sequential dataset from a process chain
@@ -27,7 +26,7 @@ def sequence_builder(
         _type_: _description_
     """
     # create a nested dictionary from Y (IST) queries
-    d = nested_dict_from_pandas(df_keys.set_index(keys_branches)) #["SapNummer","Version","WA","id"]
+    d = nested_dict_from_pandas(df_query.set_index([i for i in query_branches]))
     
     verboseprint = print if verbose else lambda *a, **k: None
 
@@ -36,91 +35,80 @@ def sequence_builder(
 
     booking_mis = [] # these samples are present in the output but are missing in the booking file
     process_mis = [] # these samples are present in the output but are missing in the process(es) file(s)
-    df_pc = pd.DataFrame()     # initiate the output process chain DataFrame
+    df_prochain = pd.DataFrame()     # initiate the output process chain DataFrame
     
-    for s in  tqdm(d.keys()):
-        df_sel = df_query.set_index(["SAP"])
+    for design in  tqdm(d.keys()):
+        df_sel = df_key.set_index([booking_design_label])
         
-        if s in df_sel.index:
+        if design in df_sel.index:
         
-            for v in d[s].keys():
-                df_sel = df_query.set_index(["SAP","SAP_Version"]).loc[int(s)]
+            for version in d[design].keys():
+                df_sel = df_key.set_index([booking_design_label,booking_version_label]).loc[int(design)]
                 
-                if v in df_sel.index:
+                if version in df_sel.index:
                 
-                    for wa in d[s][v].keys():
+                    for batch in d[design][version].keys():
                         
-                        df_sel = df_query.set_index(["SAP","SAP_Version","WA"]).loc[int(s)].loc[v]
+                        df_sel = df_key.set_index([booking_design_label,booking_version_label,booking_batch_label]).loc[int(design)].loc[version]
                         
-                        if wa in df_sel.index:
+                        if batch in df_sel.index:
                             
-                            df_sel = df_query.set_index(["SAP","SAP_Version","WA"]).loc[int(s)].loc[v].loc[[wa]]
+                            df_sel = df_key.set_index([booking_design_label,booking_version_label,booking_batch_label]).loc[int(design)].loc[version].loc[[batch]]
                             
-                            verboseprint(f"Current batch: {wa}")
-                            df_wa = pd.DataFrame()
+                            verboseprint(f"Current batch: {batch}")
+                            df_batch = pd.DataFrame()
                             
                             # STEP 1 COMPUTE PROCESS CHAIN OF THE GIVEN BATCH
-                            step_counter = 0
-                            for step in df_sel["PaPosNumber"]:
+                            for step in df_sel[booking_step_label]:
                                 
-                                df_temp, mis = get_data_step(wa,step,processes,filename_sel)       # get data for the current WA, Version and PaPosNumber
-                                df_temp = df_temp.drop_duplicates(subset="Variable")               # for each step, variables repeat once
+                                df_temp, mis = get_data_step(batch,step,processes,filepath_selected)       # get data for the current WA, Version and PaPosNumber
+                                df_temp = df_temp.drop_duplicates(subset=input_variable_label)               # for each step, variables repeat once
                                 
                                 if mis is not None:
                                     process_mis.append(mis)
                                 
                                 if df_temp is not None:
-                                    df_temp["WA"] = wa                                             # append current design
-                                    df_temp["PaPos"] = step                                        # append current step
-                                    df_temp["Version"] = v                                         # append current version
-                                    df_temp["SAP"] = s                                             # append current design
-                                    df_temp["Pos"] = step_counter                                  # append current step counter
-                                    
-                                    step_counter += 1                                              # increment for next step
+                                    df_temp[input_batch_label] = batch                                             # append current design
+                                    df_temp[input_step_label] = step                                        # append current step
+                                    df_temp[input_version_label] = version                                         # append current version
+                                    df_temp[input_design_label] = design                                             # append current design                                    
     
-                                    if len(df_wa) == 0:                                            # first loop --> initiate
-                                        df_wa = df_temp.copy()
+                                    if len(df_batch) == 0:                                            # first loop --> initiate
+                                        df_batch = df_temp.copy()
                                         verboseprint("Process Dataframe initialized!")
                                         
                                     else:
-                                        df_wa = pd.concat([df_wa,df_temp])                        # from second loop on...append
-                                        verboseprint(f"Process Dataframe updated...{wa},{step}")
+                                        df_batch = pd.concat([df_batch,df_temp])                        # from second loop on...append
+                                        verboseprint(f"Process Dataframe updated...{batch},{step}")
                                     
                             # STEP 2 DUPLICATE AND APPEND FOR ALL COUPONS IN THE SET
-                            if len(df_wa)> 0:
-                                id_list = d[s][v][wa]                                              # ID coupons belonging to the same batch/version/design
+                            if len(df_batch)> 0:
+                                id_list = d[design][version][batch]                                              # ID coupons belonging to the same batch/version/design
                                 
                                 for id in id_list:
-                                    df_wa["id"] = id                                               # add ID column with current coupon ID
-                                    df_wa["Position"] = [i for i in range(len(df_wa))]
+                                    df_batch_id = df_batch.copy()
+                                    df_batch_id[target_id_label] = id                                               # add ID column with current coupon ID
                                     
-                                    if len(df_pc) == 0:                                            # first loop --> initiate
-                                        df_pc = df_wa.copy()
+                                    if len(df_prochain) == 0:                                            # first loop --> initiate
+                                        df_prochain = df_batch_id
                                         
                                     else:                                                          # from second loop on...append
-                                        df_pc = pd.concat([df_pc,df_wa])
+                                        df_prochain = pd.concat([df_prochain,df_batch_id])
                             
                             else:
-                                booking_mis.append((s,v,wa))
+                                booking_mis.append((design,version,batch))
                         else:
-                            booking_mis.append((s,v,wa))
+                            booking_mis.append((design,version,batch))
                 else:
-                    booking_mis.append((s,v,"ALL"))
+                    booking_mis.append((design,version,"ALL"))
         else:
-            booking_mis.append((s,"ALL","ALL"))
+            booking_mis.append((design,"ALL","ALL"))
             
-    if df_pc is None:
+    if df_prochain is None:
         raise ValueError("No process has been found for the selected output!")            
     
     # assemble DataFrame of missing data
-    df_book_mis = pd.DataFrame(booking_mis, columns=["Design","Version","Batch"])
-    df_pro_mis = pd.DataFrame(process_mis, columns=["Process", "Batch", "PaPos"])
-    
-    
-    if save_file:
-        # save report of missing data
-        df_book_mis.to_csv(join(saving_path, "booking_missing.csv"), sep=",")
-        df_pro_mis.to_csv(join(saving_path,"process_missing.csv"), sep=",")
-        df_pc.to_csv(join(saving_path,"x_prochain.csv"), sep=",")
+    df_book_mis = pd.DataFrame(booking_mis, columns=[input_design_label,input_version_label,input_batch_label]) #*!TD old["Design","Version","Batch"]
+    df_pro_mis = pd.DataFrame(process_mis, columns=[input_process_label, input_batch_label, input_step_label]) #*! ["Process", "Batch", "PaPos"]
         
-    return df_pc, df_book_mis,df_pro_mis
+    return df_prochain, df_book_mis,df_pro_mis
