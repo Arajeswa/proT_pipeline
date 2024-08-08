@@ -9,14 +9,15 @@ from data_post_processing import data_post_processing
 from labels import *
 from argparse import ArgumentParser
 
-from os import getcwd
-from os.path import dirname, join
+#from os import abspath
+from os.path import dirname, join, abspath
 import sys
-ROOT_DIR = dirname(getcwd())
-sys.path.append(ROOT_DIR)
 
 
 def main(args):
+    
+    ROOT_DIR = ROOT_DIR = dirname(dirname(abspath(__file__)))
+    sys.path.append(ROOT_DIR)
     
     INPUT_DIR,OUTPUT_DIR,INTERMEDIATE_DIR = get_dirs(ROOT_DIR)
     print("Root directory: ",ROOT_DIR)
@@ -37,6 +38,8 @@ def main(args):
     # read Y (IST) file
     df_ist = pd.read_csv(filepath_target, sep=target_sep)
     
+    
+    #_____________________________ FOR DEBUGGING ______________________________________
     if args.devrun:
         test_id = df_ist[target_id_label].unique()[:100]
         df_ist = df_ist.set_index(target_id_label).loc[test_id].reset_index()
@@ -44,6 +47,11 @@ def main(args):
     if args.target_design is not None:
         df_ist = df_ist[df_ist[target_design_label]==args.target_design].reset_index()
         print(f"Target Design mode: design {args.target_design} selected from target data")
+        
+    if args.target_id is not None:
+        df_ist = df_ist[df_ist[target_id_label]==args.target_id].reset_index()
+        print(f"Target ID mode: design {args.target_id} selected from target data")
+    #___________________________________________________________________________________
     
     if args.readfile:
         print("Reading the process chain from file")
@@ -124,7 +132,11 @@ if __name__ == '__main__':
     parser.add_argument("--target_design",
                         action="store_const",
                         const=426816,
-                        help='Run a quick test for debugging purpose')
+                        help='Debugging a specific design')
+    
+    parser.add_argument("--target_id",
+                        action="store",
+                        help='Debugging a specific ID')
     
     parser.add_argument("--devrun",
                         action="store_true",
