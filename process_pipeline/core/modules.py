@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 import os
 
 
@@ -120,14 +121,8 @@ def get_data_step(
 
 
 def explode_time_components(df,time_label):
-    # df = df.copy()
-    time_components_labels = ["Year","Month","Day","Hour","Minute"]
     
-    # df[time_components_labels[0]] = pd.DatetimeIndex(df[time_label]).year
-    # df[time_components_labels[1]] = pd.DatetimeIndex(df[time_label]).month
-    # df[time_components_labels[2]] = pd.DatetimeIndex(df[time_label]).day
-    # df[time_components_labels[3]] = pd.DatetimeIndex(df[time_label]).hour
-    # df[time_components_labels[4]] = pd.DatetimeIndex(df[time_label]).minute
+    time_components_labels = ["year","month","day","hour","minute"]
     df[time_label] = pd.to_datetime(df[time_label], errors="coerce")
     date_col = df[time_label].dt
     
@@ -141,6 +136,71 @@ def explode_time_components(df,time_label):
     return df, time_components_labels
 
 
+
+def pandas_to_numpy_ds(id_samples,df,features,id_labels,initial_max_seq_len,dtype_arr=float):
+    """
+    Generate a numpy dataset from a pandas dataframe 
+    of the following shape: (#samples, sequence length, #features)
+
+    Args:
+        id_samples (list/array): id of samples to loop over, ideally same for input and target
+        df (pd.Dataframe): dataframe to flatten into array
+        features (list): columns of the df to select as features
+        id_labels (list): label used for the id column
+        initial_max_seq_len (_type_): max sequence length to start with, sequence will be pruned if too big
+
+    Raises:
+        ValueError: initial_max_seq_len is too big
+
+    Returns:
+        array/list: either the stacked final dataset array or the list of sample arrays if stacking unsuccessful 
+    """
+
+    
+    sample_list, seq_len_list = [], []
+    n_features = len(features)+1
+    
+    for id_ in tqdm(id_samples):
+    
+        # Select the rows for this ID, and convert to numpy
+        sample_df = df.set_index(id_labels).loc[id_][features]        
+
+        # convert to numpy
+        sample_array = sample_df.reset_index().to_numpy(dtype=dtype_arr)
+
+        # save sequence length
+        seq_len = len(sample_array)
+        seq_len_list.append(seq_len)
+
+        # check if initial_max_seq_len is too small
+        if seq_len > initial_max_seq_len:
+            raise ValueError("Choose larger initial_max_seq_len")
+
+        # pad with NaN if shorter
+        if seq_len < initial_max_seq_len:
+            padded_array = np.full((initial_max_seq_len, n_features), np.nan, dtype=dtype_arr) # create a template nan array
+            padded_array[:seq_len] = sample_array  # overwrite beginning with actual data
+            sample_array = padded_array
+
+        sample_list.append(sample_array)
+        
+        
+    try:
+        result_array = np.stack(sample_list, axis=0)
+        max_len = max(seq_len_list)
+        result_array = result_array[:,:max_len]
+        length_counts = pd.Series(seq_len_list).value_counts().sort_index()
+        print("Stacking successful, dataset correctly generated!")
+        print("Found the following sequence lengths")
+        print(length_counts)
+        return result_array
+
+    except:
+        print("stacking didn't work")
+        length_counts = pd.Series(seq_len_list).value_counts().sort_index()
+        print("Found the following sequence lengths")
+        print(length_counts)
+        return sample_list
 
 
 
@@ -203,3 +263,7 @@ class Process():
     def get_variables_list(self, filename_sel)->None:
         self.df_lookup = pd.read_excel(filename_sel,sheet_name=self.process_label)
         self.variables_list = self.df_lookup[self.df_lookup["Select"]]["variable"].tolist()
+        
+        
+        
+    

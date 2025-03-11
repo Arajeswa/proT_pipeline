@@ -15,7 +15,7 @@ def get_dirs(root: str, dataset_id: str):
     return INPUT_DIR,OUTPUT_DIR,INTERMEDIATE_DIR,CONTROL_DIR
 
 # TARGET
-target_filename = "y_ist.csv"
+target_filename = "df_trg.csv"
 target_trimmed_filename = "y_trimmed.csv"
 target_sep = ","
 target_design_label = "SapNummer"
@@ -33,7 +33,7 @@ input_design_label = "SAP"
 input_version_label = "Version"
 input_variable_label = "Variable"
 input_process_label = "Process"
-input_batch_label = "WA"
+input_batch_label = "batch"
 input_step_label = "PaPos"
 input_id_label = "id"
 input_abs_pos_label = "AbsPos"
@@ -75,13 +75,17 @@ trans_batch_label = "batch"
 trans_process_label = "process"
 trans_variable_label = "variable"
 trans_id_label = "id"
+time_components_labels = ["year","month","day","hour","minute"]
 
 # TRANSVERSAL FILES
 trans_missing_batches = "missing_batches.json"
+var_dict_filename = "variables_vocabulary.json"
+process_dict_filename = "process_vocabulary.json"
+pos_dict_filename = "position_vocabulary.json"
 trans_df_process_raw = "df_process_raw.csv"
 trans_df_input_short = "df_input_short.parquet"
 trans_df_input = "df_input.parquet"
-time_components_labels = ["Year","Month","Day","Hour","Minute"]
+
 
 # OUTPUT DATASET FILES
 input_ds_label = "X.npy"

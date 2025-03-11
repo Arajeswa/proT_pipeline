@@ -6,7 +6,7 @@ sys.path.append(ROOT_DIR)
 
 from process_pipeline.data_loader import get_processes
 from process_pipeline.labels import *
-from process_pipeline.level_sequences import *
+from process_pipeline._old.level_sequences import *
 
 INPUT_DIR = join(ROOT_DIR,"data/input/")
 INTERMEDIATE_DIR = join(ROOT_DIR,"data/intermediate/")

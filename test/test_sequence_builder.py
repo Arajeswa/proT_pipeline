@@ -7,7 +7,7 @@ ROOT_DIR = dirname(getcwd())
 sys.path.append(ROOT_DIR)
 
 from process_pipeline.data_loader import get_processes,get_booking
-from process_pipeline.sequence_builder import sequence_builder
+from process_pipeline._old.sequence_builder import sequence_builder
 from process_pipeline.labels import *
 
 input_data_path = join(ROOT_DIR,"data/input/")

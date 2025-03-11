@@ -1,14 +1,8 @@
 import pandas as pd
 import numpy as np
 import sys
-from data_loader import get_processes,get_booking,generate_lookup
-from sequence_builder import sequence_builder
-from data_trimmer import data_trimmer
-from level_sequences import level_sequences
-from data_post_processing import data_post_processing
+from data_loader import get_processes
 from labels import *
-from argparse import ArgumentParser
-from fix_steps import fix_steps
 import json
 #from os import abspath
 from os.path import dirname, join, abspath, exists
@@ -29,14 +23,11 @@ def assemble_raw(dataset_id,debug=False)->None:
     dataset_id (str), working dataset folder 
     """
     
-    dataset_id = "dyconex_test"
-
     # define directories
     ROOT_DIR = ROOT_DIR = dirname(dirname(abspath(__file__)))
     sys.path.append(ROOT_DIR)
     INPUT_DIR,OUTPUT_DIR,INTERMEDIATE_DIR,CONTROL_DIR = get_dirs(ROOT_DIR, dataset_id)
     filepath_selected = join(CONTROL_DIR, selected_filename)
-    filepath_lookup = join(CONTROL_DIR, lookup_filename)
     filepath_target = join(CONTROL_DIR, target_filename)
 
     #load processes
