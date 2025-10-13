@@ -4,7 +4,7 @@ import sys
 ROOT_DIR = dirname(getcwd())
 sys.path.append(ROOT_DIR)
 
-from process_pipeline.data_loader import get_processes
+from proT_pipeline.data_loader import get_processes
 
 
 input_data_path = "process_pipeline/data/input/"

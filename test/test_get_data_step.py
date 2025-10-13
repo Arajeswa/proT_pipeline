@@ -6,9 +6,9 @@ import sys
 ROOT_DIR = dirname(getcwd())
 sys.path.append(ROOT_DIR)
 
-from process_pipeline.core.modules import get_data_step
-from process_pipeline.data_loader import get_processes, get_booking
-from process_pipeline.utils import nested_dict_from_pandas
+from proT_pipeline.core.modules import get_data_step
+from proT_pipeline.data_loader import get_processes, get_booking
+from proT_pipeline.utils import nested_dict_from_pandas
 
 input_data_path = join(ROOT_DIR,"data/input/")
 intermediate_data_path = join(ROOT_DIR,"data/intermediate/")

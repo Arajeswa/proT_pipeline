@@ -4,9 +4,9 @@ import sys
 ROOT_DIR = dirname(dirname(abspath(__file__)))
 sys.path.append(ROOT_DIR)
 
-from process_pipeline.data_loader import get_processes
-from process_pipeline.labels import *
-from process_pipeline._old.level_sequences import *
+from proT_pipeline.data_loader import get_processes
+from proT_pipeline.core.labels import *
+from proT_pipeline._old.level_sequences import *
 
 INPUT_DIR = join(ROOT_DIR,"data/input/")
 INTERMEDIATE_DIR = join(ROOT_DIR,"data/intermediate/")

@@ -6,7 +6,7 @@ import sys
 ROOT_DIR = dirname(getcwd())
 sys.path.append(ROOT_DIR)
 
-from process_pipeline.data_trimmer import data_trimmer
+from proT_pipeline.data_trimmer import data_trimmer
 
 intermediate_data_path = "process_pipeline/data/intermediate/"
 
