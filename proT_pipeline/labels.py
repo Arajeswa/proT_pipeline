@@ -1,9 +1,20 @@
 
-from os.path import join, exists
+from os.path import join, exists, dirname, abspath
 from os import makedirs
 from omegaconf import OmegaConf
+import sys
 
 # DIRECTORIES
+
+def get_root_dir():
+    """
+    Get the root directory of the project.
+    
+    Returns:
+        str: Absolute path to the project root directory
+    """
+    return dirname(dirname(abspath(__file__)))
+
 
 def get_dirs(root: str, dataset_id: str):
     
@@ -54,6 +65,10 @@ input_given_label = "Given"
 input_value_label = "Value"
 input_time_label = "Time"
 
+# OCCURRENCE FILE LABELS
+occurrence_position_label = "Pos"
+occurrence_layer_label = "Lage"
+
 
 # CONTROL FILES
 selected_filename = "lookup_selected.xlsx"
@@ -90,6 +105,11 @@ trans_variable_label = "variable"
 trans_order_label = "order"
 trans_id_label = "id"
 trans_group_id = "group"
+trans_design_label = "design"
+trans_version_label = "version"
+trans_design_version_label = "design_version"
+trans_occurrence_label = "occurrence"
+trans_step_label = "step"
 time_components_labels = ["year","month","day","hour","minute"]
 
 # TRANSVERSAL FILES
@@ -97,14 +117,20 @@ trans_missing_batches = "missing_batches.json"
 var_dict_filename = "variables_vocabulary.json"
 process_dict_filename = "process_vocabulary.json"
 pos_dict_filename = "position_vocabulary.json"
+group_dict_filename = "group_vocabulary.json"
+step_dict_filename = "step_vocabulary.json"
 batch_dict_filename = "batch_vocabulary.json"
+feat_dict_filename = "features_dict"
 trans_df_process_raw = "df_process_raw.csv"
 trans_df_input_short = "df_input_short.parquet"
 trans_df_input = "df_input.parquet"
 
 
+
 # OUTPUT DATASET FILES
 input_ds_label = "X.npy"
 trg_ds_label = "Y.npy"
-
-
+# Compressed dataset files (npz format)
+full_data_label = "data.npz"
+train_data_label = "train_data.npz"
+test_data_label = "test_data.npz"

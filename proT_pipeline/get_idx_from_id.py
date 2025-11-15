@@ -1,9 +1,6 @@
 import numpy as np
-from os.path import dirname, join, abspath
-import sys
-ROOT_DIR = dirname(dirname(abspath(__file__)))
-sys.path.append(ROOT_DIR)
-from proT_pipeline.core.labels import *
+from os.path import join
+from proT_pipeline.labels import *
 import json
 
 
@@ -17,11 +14,9 @@ def get_idx_from_id(dataset_id: str, id_sel_filename: str, idx_sel_filename: str
         idx_sel_filename (str): file name to save selected indices
     """
     
-    
     # define directories
-    ROOT_DIR = ROOT_DIR = dirname(dirname(abspath(__file__)))
-    sys.path.append(ROOT_DIR)
-    _,OUTPUT_DIR,CONTROL_DIR = get_dirs(ROOT_DIR, dataset_id)
+    ROOT_DIR = get_root_dir()
+    _, OUTPUT_DIR, CONTROL_DIR = get_dirs(ROOT_DIR, dataset_id)
     filepath_target = join(CONTROL_DIR, target_filename)
     
     id_sel = np.load(join(CONTROL_DIR,id_sel_filename),allow_pickle=True)

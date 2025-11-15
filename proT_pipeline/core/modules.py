@@ -391,7 +391,3 @@ class Process():
     def get_variables_list(self, filename_sel)->None:
         self.df_lookup = pd.read_excel(filename_sel,sheet_name=self.process_label)
         self.variables_list = self.df_lookup[self.df_lookup["Select"]]["variable"].tolist()
-        
-        
-        
-    

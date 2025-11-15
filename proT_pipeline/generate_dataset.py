@@ -1,145 +1,219 @@
 import pandas as pd
 import numpy as np
 import logging
-from os.path import dirname, join, abspath
+from os.path import join, exists
 from os import mkdir
-import sys
 from core.modules import explode_time_components, pandas_to_numpy_ds
 import json
-sys.path.append(dirname(dirname(abspath(__file__))))
-from proT_pipeline.core.labels import *
-from labels import *
+from proT_pipeline.labels import *
+from rarity_utils import *
 
 
 def generate_dataset(dataset_id):
     """
-    Generate the dataset.
-    The pandas dataframe from previous steps are converted into numpy dataset. 
-    Plus, this method
-    - selects the features to include 
-    - generates the variable/process/position vocabularies
-    - maps vocabulary entries to embedding index
+    Generate the final dataset from processed dataframes.
+    
+    This function performs several key operations:
+    1. Loads processed input and target dataframes
+    2. Creates vocabulary mappings (processes, variables, groups)
+    3. Computes sample-level metrics for stratified splitting
+    4. Defines feature schema for X and Y arrays
+    5. Converts pandas DataFrames to numpy arrays
+    6. Saves dataset as compressed npz file
+    
+    The dataset uses integer encoding for categorical features:
+    - Group IDs: 0, 1, 2, ... (sample identifiers)
+    - Processes: 1, 2, 3, ... (Laser, Plasma, etc.)
+    - Variables: 1, 2, 3, ... (input and target parameters)
     
     Args:
-        dataset_id (str), working dataset folder
+        dataset_id (str): working dataset folder name
+    
+    Raises:
+        FileNotFoundError: If required input files are missing
+    
+    Outputs:
+        - Vocabulary JSON files (groups, processes, variables, features)
+        - Sample metrics parquet file
+        - Compressed dataset npz file with X and Y arrays
     """
     
-    # define directories
-    ROOT_DIR = ROOT_DIR = dirname(dirname(abspath(__file__)))
-    sys.path.append(ROOT_DIR)
-    _,OUTPUT_DIR,CONTROL_DIR = get_dirs(ROOT_DIR, dataset_id)
+    # Define directories
+    ROOT_DIR = get_root_dir()
+    _, OUTPUT_DIR, CONTROL_DIR = get_dirs(ROOT_DIR, dataset_id)
     filepath_target = join(CONTROL_DIR, target_filename)
     
-    # import input and target dataframes
-    df_trg = pd.read_csv(filepath_target, sep=target_sep)
+    # Load input and target dataframes
+    try:
+        df_trg = pd.read_csv(filepath_target, sep=target_sep)
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"Target file not found: {filepath_target}\n"
+            f"Run assemble_raw() first to create necessary files."
+        )
+    
     df_trg,_ = explode_time_components(df_trg, trans_date_label)
     df_trg[trans_process_label] = "IST"
     
     # read input file
-    df_input = pd.read_parquet(join(OUTPUT_DIR,trans_df_input))
+    try:
+        df_input = pd.read_parquet(join(OUTPUT_DIR, trans_df_input))
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"Processed input file not found: {join(OUTPUT_DIR, trans_df_input)}\n"
+            f"Run process_raw() first to create this file."
+        )
     
-    # generate batch dictionary
+    # ============================================================================
+    # CREATE VOCABULARY MAPPINGS
+    # ============================================================================
+    # Maps convert categorical features to integers, saved as JSON dictionaries.
+    # Indices start from 1 (0 reserved for missing values in some contexts).
+    
+    # Group ID mapping (sample identifiers)
     group_array = df_input[trans_group_id].unique()
-    group_dict = {batch:j for j,batch in enumerate(group_array)}
-    logging.info(f"batch dictionary size: {len(group_dict)}")
-    with open(join(OUTPUT_DIR, batch_dict_filename), "w") as f:
+    group_dict = {group: j for j, group in enumerate(group_array)}
+    logging.info(f"Group dictionary size: {len(group_dict)}")
+    with open(join(OUTPUT_DIR, group_dict_filename), "w") as f:
         json.dump(group_dict, f, indent=4)
     
-    
-    # generate processes dictionary ---------------------------------------------------------------------------
-    # input
+    # Process mapping for input (e.g., 1: Laser, 2: Plasma, etc.)
     pro_array_input = df_input[trans_process_label].unique()
-    pro_dict_input = {pro:j for j,pro in enumerate(pro_array_input, start=1)}
-    logging.info(f"processes dictionary size: {len(pro_dict_input)}")
+    pro_dict_input = {pro: j for j, pro in enumerate(pro_array_input, start=1)}
+    logging.info(f"Process dictionary size: {len(pro_dict_input)}")
     with open(join(OUTPUT_DIR, process_dict_filename), "w") as f:
         json.dump(pro_dict_input, f, indent=4)
     
-    # target
-    pro_array_trg = df_trg[trans_process_label].unique()
-    pro_dict_trg = {pro:j for j,pro in enumerate(pro_array_trg, start=1)}
-    logging.info(f"processes dictionary size: {len(pro_dict_trg)}")
-    with open(join(OUTPUT_DIR, process_dict_filename), "w") as f:
-        json.dump(pro_dict_trg, f, indent=4)
-    
-    
-    # generate variables dictionary ---------------------------------------------------------------------------
-    # input
+    # Variable mapping for input (e.g., 1: las_1, ..., 200: pla_35)
+    # Note: Proprietary names are available in lookup_selected.xlsx
     var_array_input = df_input[trans_variable_label].unique()
-    var_dict_input = {var:i for i,var in enumerate(var_array_input, start=1)}
-    logging.info(f"variables dictionary size: {len(var_dict_input)}")
+    var_dict_input = {var: i for i, var in enumerate(var_array_input, start=1)}
+    logging.info(f"Input variables dictionary size: {len(var_dict_input)}")
     with open(join(OUTPUT_DIR, var_dict_filename + "_input"), "w") as f:
         json.dump(var_dict_input, f, indent=4)
     
-    # target
+    # Variable mapping for target (e.g., 1: Sense_A, 2: Sense_B)
+    # Note: occurrence and step features are already integers (handled by process_raw.py)
     var_array_trg = df_trg[trans_variable_label].unique()
-    
-    # if int64, following maps won't work, convert to int
-    if var_array_trg.dtype=="int64":
+    if var_array_trg.dtype == "int64":
+        # Convert int64 to string for consistent mapping
         var_array_trg = var_array_trg.astype(str)
         df_trg[trans_variable_label] = df_trg[trans_variable_label].astype(str)
-        
-    var_dict_trg = {str(var):i for i,var in enumerate(var_array_trg, start=1)}
-    logging.info(f"variables dictionary size: {len(var_dict_trg)}")
+    
+    var_dict_trg = {str(var): i for i, var in enumerate(var_array_trg, start=1)}
+    logging.info(f"Target variables dictionary size: {len(var_dict_trg)}")
     with open(join(OUTPUT_DIR, var_dict_filename + "_trg"), "w") as f:
         json.dump(var_dict_trg, f, indent=4)
     
-    
-    # generate positions dictionary ---------------------------------------------------------------------------
-    # input
-    pos_array_input = df_input[trans_position_label].sort_values().unique()
-    pos_dict_input = {pos:k for k,pos in enumerate(pos_array_input, start=1)}
-    logging.info(f"positions dictionary size: {len(pos_dict_input)}")
-    with open(join(OUTPUT_DIR, pos_dict_filename), "w") as f:
-        json.dump(pos_dict_input, f, indent=4)
-    
-    # map processes/variables/positions to their vocabulary value (to have numbers instead of objects)
-    df_trg[trans_process_label]    = df_trg[trans_process_label].map(pro_dict_trg)
+    # ============================================================================
+    # APPLY MAPPINGS TO DATAFRAMES
+    # ============================================================================
     df_input[trans_process_label]  = df_input[trans_process_label].map(pro_dict_input)
     df_trg[trans_variable_label]   = df_trg[trans_variable_label].map(var_dict_trg)
     df_input[trans_variable_label] = df_input[trans_variable_label].map(var_dict_input)
-    df_input[trans_position_label] = df_input[trans_position_label].map(pos_dict_input)
     df_input[trans_group_id] = df_input[trans_group_id].map(group_dict)
     df_trg[trans_group_id] = df_trg[trans_group_id].map(group_dict)
     
-    # get the unique ids from the mapped group column of the target
+    # Get unique sample IDs from the mapped group column
     id_samples = df_input[trans_group_id].unique()
     
-    # define features 
-    input_features = [trans_process_label, trans_variable_label, trans_position_label, trans_value_norm_label, trans_order_label]
-    input_features.extend(time_components_labels) # include exploded time
-    trg_features = [trans_process_label, trans_variable_label, trans_position_label, trans_value_label]
-    trg_features.extend(time_components_labels) # include exploded time
+    # ============================================================================
+    # COMPUTE SAMPLE METRICS
+    # ============================================================================
+    # Calculate metrics for stratified train/test splitting
+    rarity_df = apply_metrics([
+        (compute_rarity_last_value, {
+            'df': df_trg,
+            'group_id_label': trans_group_id,
+            'variable_label': trans_variable_label,
+            'value_label': trans_value_label,
+            'position_label': trans_position_label,
+            'n_bins': 50
+        }),
+        (compute_rarity_nan_fraction, {
+            'df': df_input,
+            'group_id_label': trans_group_id,
+            'value_label': trans_value_norm_label,
+            'n_bins': 50
+        })
+    ])
     
-    # assemble the features dictionary to document which features are on which index
+    # Save metrics for later use in stratified splitting
+    rarity_df.to_parquet(join(OUTPUT_DIR, "sample_metrics.parquet"))
+    logging.info("Saved sample metrics to sample_metrics.parquet")
+    
+    # ============================================================================
+    # DEFINE FEATURE SCHEMA
+    # ============================================================================
+    # Feature indices for X (input) array:
+    #   0: group_id    - sample ID
+    #   1: process     - process ID
+    #   2: occurrence  - occurrence of the same process
+    #   3: step        - step within same process occurrence
+    #   4: variable    - parameter ID
+    #   5: value       - normalized values
+    #   6+: time       - time components (year, month, day, hour, minute)
+    #
+    # Feature indices for Y (target) array:
+    #   0: group_id    - sample ID
+    #   1: position    - position (for IST, cycle number)
+    #   2: variable    - parameter ID (for IST: Sense_A, Sense_B)
+    #   3: value       - real values
+    #   4+: time       - time components (year, month, day, hour, minute)
+    
+    input_features = [
+        trans_process_label,
+        trans_occurrence_label,
+        trans_step_label, 
+        trans_variable_label, trans_value_norm_label, 
+        ]
+    input_features.extend(time_components_labels)
+    
+    trg_features = [
+        trans_position_label,
+        trans_variable_label, 
+        trans_value_label
+    ]
+    trg_features.extend(time_components_labels)
+    
+    # Assemble feature dictionary (documents feature-to-index mappings for model design)
     feat_dict = {
-        "input" : {key+1:val for key, val in enumerate(input_features)},
-        "target": {key+1:val for key, val in enumerate(trg_features)}}
+        "input": {key + 1: val for key, val in enumerate(input_features)},
+        "target": {key + 1: val for key, val in enumerate(trg_features)}
+    }
     
-    feat_dict["input"][0]=trans_group_id
-    feat_dict["target"][0]=trans_group_id
+    # Assign group_id at index 0 for both input and target
+    feat_dict["input"][0] = trans_group_id
+    feat_dict["target"][0] = trans_group_id
     
+    # Sort for better readability
     feat_dict["input"] = {key: feat_dict["input"][key] for key in sorted(feat_dict["input"].keys())}
     feat_dict["target"] = {key: feat_dict["target"][key] for key in sorted(feat_dict["target"].keys())}
     
     with open(join(OUTPUT_DIR, feat_dict_filename), "w") as f:
         json.dump(feat_dict, f, indent=4)
     
-    # convert pandas to numpy dataset
-    logging.info("Flattening input sequence")
-    array_input = pandas_to_numpy_ds(id_samples,df_input,input_features,trans_group_id,2000)
-    logging.info("Flattening target sequence")
-    array_trg = pandas_to_numpy_ds(id_samples,df_trg,trg_features,trans_group_id,3000)
+    # ============================================================================
+    # CONVERT TO NUMPY ARRAYS
+    # ============================================================================
+    logging.info("Flattening input sequence to numpy array")
+    array_input = pandas_to_numpy_ds(id_samples, df_input, input_features, trans_group_id, 2000)
     
-    # save dataset
+    logging.info("Flattening target sequence to numpy array")
+    array_trg = pandas_to_numpy_ds(id_samples, df_trg, trg_features, trans_group_id, 3000)
+    
+    # ============================================================================
+    # SAVE DATASET
+    # ============================================================================
     dataset_name = f"ds_{dataset_id}"
     dataset_dir = join(OUTPUT_DIR, dataset_name)
     if not exists(dataset_dir):
         mkdir(dataset_dir)
     
-    np.save(join(dataset_dir,input_ds_label),array_input)
-    np.save(join(dataset_dir,trg_ds_label),array_trg)
+    # Save as compressed numpy archive (npz format)
+    np.savez(join(dataset_dir, full_data_label), x=array_input, y=array_trg)
+    logging.info(f"Saved compressed dataset to {full_data_label} (X: {array_input.shape}, Y: {array_trg.shape})")
     
     
 if __name__ == "__main__":
-    generate_dataset(dataset_id = "dx_250602_200_mean_clip")
-
+    generate_dataset(dataset_id = "dx_occurrence_test")
