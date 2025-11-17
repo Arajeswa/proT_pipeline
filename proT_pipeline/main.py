@@ -7,11 +7,11 @@ from omegaconf import OmegaConf
 ROOT_DIR = dirname(dirname(abspath(__file__)))
 sys.path.append(ROOT_DIR)
 from proT_pipeline.labels import *
-from proT_pipeline.assemble_raw import assemble_raw
-from proT_pipeline.process_raw import process_raw
-from proT_pipeline.generate_dataset import generate_dataset
-from proT_pipeline.get_idx_from_id import get_idx_from_id
-from proT_pipeline.split_by_metric import split_by_metric
+from proT_pipeline.input_processing.assemble_raw import assemble_raw
+from proT_pipeline.input_processing.process_raw import process_raw
+from proT_pipeline.input_processing.generate_dataset import generate_dataset
+from proT_pipeline.input_processing.get_idx_from_id import get_idx_from_id
+from proT_pipeline.input_processing.split_by_metric import split_by_metric
 
 
 

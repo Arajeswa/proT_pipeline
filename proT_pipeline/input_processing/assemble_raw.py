@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import logging
-from data_loader import get_processes
+from proT_pipeline.input_processing.data_loader import get_processes
 from proT_pipeline.labels import *
 from proT_pipeline.core.modules import split_queries_by_keys
 import json
