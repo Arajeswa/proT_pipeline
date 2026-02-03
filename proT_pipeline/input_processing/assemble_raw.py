@@ -66,9 +66,19 @@ def assemble_raw(
     if debug:
         query_groups = df_trg[trans_group_id].unique()[:100].tolist()
     
-    # Create group_id to design_version mapping
-    df_trg[trans_design_version_label] = df_trg[trans_design_label].astype(str) + "_" + df_trg[trans_version_label].astype(str)
-    design_version_map = df_trg[[trans_group_id, trans_design_version_label]].set_index(trans_group_id).to_dict()
+    # Create group_id to design_version mapping (if columns exist)
+    # In prediction mode with placeholder targets, these columns may not exist
+    if trans_design_label in df_trg.columns and trans_version_label in df_trg.columns:
+        df_trg[trans_design_version_label] = df_trg[trans_design_label].astype(str) + "_" + df_trg[trans_version_label].astype(str)
+        design_version_map = df_trg[[trans_group_id, trans_design_version_label]].set_index(trans_group_id).to_dict()
+        use_design_version_mapping = True
+    else:
+        logging.warning(
+            "Design/version columns not found in df_trg. "
+            "Using placeholder value for design_version (prediction mode)."
+        )
+        design_version_map = None
+        use_design_version_mapping = False
     
     # Load process step selection control file
     df_steps_sel = pd.read_excel(join(CONTROL_DIR, selected_process_filename))
@@ -165,8 +175,12 @@ def assemble_raw(
     if len(df_check) != 0: 
         logging.warning(f"Action needed! {len(df_check)} position IDs are used for multiple processes: {df_check.index.tolist()}")
     
-    # Apply design_version mapping
-    df_raw[trans_design_version_label] = df_raw[trans_group_id].map(design_version_map[trans_design_version_label])
+    # Apply design_version mapping (or placeholder for prediction mode)
+    if use_design_version_mapping:
+        df_raw[trans_design_version_label] = df_raw[trans_group_id].map(design_version_map[trans_design_version_label])
+    else:
+        # In prediction mode without design/version info, use placeholder
+        df_raw[trans_design_version_label] = "UNKNOWN_UNKNOWN"
     
     # ============================================================================
     # SAVE OUTPUTS

@@ -1,34 +1,44 @@
-import pandas as pd
+"""
+Test script for sequence_builder module.
 
-from os import getcwd
-from os.path import dirname, join
+NOTE: This test references the deprecated sequence_builder module which has been 
+refactored into the new pipeline structure. The functionality is now part of
+the input_processing module.
+
+This test file is kept for reference but may not work with the current 
+module structure.
+"""
+
+import pandas as pd
 import sys
-ROOT_DIR = dirname(getcwd())
+from os.path import dirname, abspath, join, exists
+
+# Setup path
+ROOT_DIR = dirname(dirname(abspath(__file__)))
 sys.path.append(ROOT_DIR)
 
-from proT_pipeline.data_loader import get_processes,get_booking
-from proT_pipeline._old.sequence_builder import sequence_builder
-from proT_pipeline.core.labels import *
 
-input_data_path = join(ROOT_DIR,"data/input/")
-intermediate_data_path = join(ROOT_DIR,"data/intermediate/")
-output_data_path = join(ROOT_DIR,"data/output/")
+def test_sequence_builder():
+    """
+    Test sequence builder functionality.
+    
+    NOTE: The original sequence_builder module has been deprecated.
+    This functionality is now handled differently in the pipeline.
+    """
+    print("=" * 60)
+    print("SEQUENCE BUILDER TEST")
+    print("=" * 60)
+    print()
+    print("NOTE: This test references deprecated functionality.")
+    print("The sequence_builder module has been refactored.")
+    print()
+    print("For current sequence building, use:")
+    print("  - proT_pipeline.input_processing.assemble_raw")
+    print("  - proT_pipeline.input_processing.process_raw")
+    print("  - proT_pipeline.input_processing.generate_dataset")
+    print()
+    print("Test skipped - module deprecated.")
 
-filepath_sel  = intermediate_data_path + selected_filename
-filepath_look = intermediate_data_path + lookup_filename
 
-
-# load processes
-_, processes = get_processes(input_data_path,filepath_sel)
-
-# read the keys file (Y target: IST)
-df_ist = pd.read_csv(intermediate_data_path + "y_ist.csv", sep=",")
-df_ist = df_ist.iloc[:100000]
-
-# get the booking file
-df_book = get_booking(input_data_path)
-
-df_pc, df_book_mis,df_pro_mis = sequence_builder(df_key=df_book.copy(), df_query=df_ist.copy(), query_branches=["SapNummer","Version","WA","id"],
-                        processes=processes, saving_path = intermediate_data_path, selected_filename=filepath_sel)
-
-print("All test passed!")
+if __name__ == "__main__":
+    test_sequence_builder()

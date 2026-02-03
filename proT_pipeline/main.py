@@ -116,7 +116,7 @@ def main(
 
 if __name__ == "__main__":
     main(
-        dataset_id = "dx_occurrence_test",
+        dataset_id = "dyconex_251117",
         missing_threshold=30,
         use_stratified_split = True,
-        debug=True)
+        debug=False)

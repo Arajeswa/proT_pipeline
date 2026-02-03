@@ -1,53 +1,83 @@
-import pandas as pd
+"""
+Test script for get_data_step functionality.
 
-from os import getcwd
-from os.path import dirname, join
+Tests retrieving data for specific process steps.
+"""
+
+import pandas as pd
 import sys
-ROOT_DIR = dirname(getcwd())
+from os.path import dirname, abspath, join, exists
+
+# Setup path
+ROOT_DIR = dirname(dirname(abspath(__file__)))
 sys.path.append(ROOT_DIR)
 
 from proT_pipeline.core.modules import get_data_step
-from proT_pipeline.data_loader import get_processes, get_booking
+from proT_pipeline.input_processing.data_loader import get_processes
 from proT_pipeline.utils import nested_dict_from_pandas
 
-input_data_path = join(ROOT_DIR,"data/input/")
-intermediate_data_path = join(ROOT_DIR,"data/intermediate/")
-output_data_path = join(ROOT_DIR,"data/output/")
 
-filename_sel  = intermediate_data_path +"lookup_selected.xlsx"
-filename_look = intermediate_data_path +"lookup.xlsx"
-
-#load booking
-df_book = get_booking(input_data_path)
-
-#load processes
-_, processes = get_processes(input_data_path,filename_sel)
-
-# read Y (IST) file
-df_ist = pd.read_csv(intermediate_data_path + "y_ist.csv", sep=",")
-df_ist = df_ist.iloc[:100000]
-
-# create a nested dictionary from Y (IST) queries
-d = nested_dict_from_pandas(df_ist.set_index(["SapNummer","Version","WA","id"]))
-
-# query the following coordinates
-sap = 426816
-ver = 'C'
-wa = 'CTBV'
-
-# select from booking dataframe
-df_sel = df_book.set_index(["SAP","SAP_Version","WA"]).loc[sap].loc[ver].loc[wa]
-steps = df_sel["PaPosNumber"]
-
-df_list = None
-for step in steps:
-    df,_ = get_data_step(wa,step,processes,filename_sel)
-    if df_list is None:
-        df_list = df
+def test_get_data_step(input_data_path: str, control_path: str):
+    """
+    Test retrieving data for specific process steps.
+    
+    Args:
+        input_data_path: Path to input data folder
+        control_path: Path to control folder with lookup files
+    """
+    print("=" * 60)
+    print("GET DATA STEP TEST")
+    print("=" * 60)
+    
+    filepath_sel = join(control_path, "lookup_selected.xlsx")
+    
+    # Load processes
+    print("\nLoading processes...")
+    _, processes = get_processes(
+        input_data_path, 
+        filepath_sel,
+        grouping_method="panel",
+        grouping_column=None
+    )
+    print(f"Loaded {len(processes)} processes")
+    
+    # Test getting data for a specific step
+    # Note: You'll need to adjust these values based on your actual data
+    test_wa = None
+    test_step = None
+    
+    # Try to find a valid WA and step from the loaded processes
+    for process in processes:
+        if len(process.df) > 0:
+            test_wa = process.df[process.WA_label].iloc[0]
+            test_step = process.df[process.PaPos_label].iloc[0]
+            break
+    
+    if test_wa and test_step:
+        print(f"\nTesting with WA={test_wa}, step={test_step}")
+        
+        try:
+            df, _ = get_data_step(test_wa, test_step, processes, filepath_sel)
+            print(f"  ✓ Retrieved {len(df)} rows")
+            if len(df) > 0:
+                print(f"  Found processes: {df['Process'].unique().tolist()}")
+        except Exception as e:
+            print(f"  ✗ Error: {e}")
     else:
-        df_list = pd.concat([df_list,df])
+        print("\nNo test data available - skipping step test")
+    
+    print("\nTest complete!")
 
-found_processes = df_list["Process"].unique()
 
-print(f"DataFrame assembled for the following coordinates SAP={sap}, version={ver}, WA={wa}")
-print(f"The following processes where found {found_processes}")
+if __name__ == "__main__":
+    # Configuration - update these paths for your setup
+    TEST_INPUT_PATH = join(ROOT_DIR, "data", "input", "Prozessdaten_MSEI_01_01_2022-07_07_2025_csv")
+    TEST_CONTROL_PATH = join(ROOT_DIR, "data", "builds", "dyconex_251117", "control")
+    
+    if exists(TEST_INPUT_PATH) and exists(TEST_CONTROL_PATH):
+        test_get_data_step(TEST_INPUT_PATH, TEST_CONTROL_PATH)
+    else:
+        print("Test data not found. Please ensure data files are available.")
+        print(f"  Expected input path: {TEST_INPUT_PATH}")
+        print(f"  Expected control path: {TEST_CONTROL_PATH}")
+        print("\nSkipping test - data files required.")

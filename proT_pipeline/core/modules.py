@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import logging
-from labels import *
+from proT_pipeline.labels import *
 from tqdm import tqdm
 import os
 from os.path import join

@@ -3,10 +3,10 @@ import numpy as np
 import logging
 from os.path import join, exists
 from os import mkdir
-from core.modules import explode_time_components, pandas_to_numpy_ds
+from proT_pipeline.core.modules import explode_time_components, pandas_to_numpy_ds
 import json
 from proT_pipeline.labels import *
-from rarity_utils import *
+from proT_pipeline.rarity_utils import *
 
 
 def generate_dataset(dataset_id):
@@ -134,7 +134,15 @@ def generate_dataset(dataset_id):
             'df': df_input,
             'group_id_label': trans_group_id,
             'value_label': trans_value_norm_label,
-            'n_bins': 50
+            'n_bins': 50,
+            'tag' : 'input'
+        }),
+        (compute_rarity_nan_fraction, {
+            'df': df_trg,
+            'group_id_label': trans_group_id,
+            'value_label': trans_value_label,
+            'n_bins': 50,
+            'tag' : 'target'
         })
     ])
     
@@ -152,7 +160,8 @@ def generate_dataset(dataset_id):
     #   3: step        - step within same process occurrence
     #   4: variable    - parameter ID
     #   5: value       - normalized values
-    #   6+: time       - time components (year, month, day, hour, minute)
+    #   6: order       - causal order from timestamps
+    #   7+: time       - time components (year, month, day, hour, minute)
     #
     # Feature indices for Y (target) array:
     #   0: group_id    - sample ID
@@ -165,7 +174,9 @@ def generate_dataset(dataset_id):
         trans_process_label,
         trans_occurrence_label,
         trans_step_label, 
-        trans_variable_label, trans_value_norm_label, 
+        trans_variable_label, 
+        trans_value_norm_label,
+        trans_order_label
         ]
     input_features.extend(time_components_labels)
     
@@ -216,4 +227,4 @@ def generate_dataset(dataset_id):
     
     
 if __name__ == "__main__":
-    generate_dataset(dataset_id = "dx_occurrence_test")
+    generate_dataset(dataset_id = "dyconex_251117")

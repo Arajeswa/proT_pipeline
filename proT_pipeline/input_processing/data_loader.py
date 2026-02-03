@@ -14,7 +14,7 @@ from omegaconf import OmegaConf
 from proT_pipeline.core.modules import Process, get_df_lookup
 from proT_pipeline.utils import fix_format_columns
 import pandas as pd
-from labels import *
+from proT_pipeline.labels import *
 
 
 laser = Process(

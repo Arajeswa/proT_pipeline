@@ -1,42 +1,44 @@
+"""
+Test script for level_sequences module.
+
+NOTE: This test references the deprecated level_sequences module which has been 
+refactored into the new pipeline structure. The functionality is now part of
+the input_processing and core modules.
+
+This test file is kept for reference but may not work with the current 
+module structure.
+"""
+
 import pandas as pd
-from os.path import dirname, join, abspath
 import sys
+from os.path import dirname, abspath, join, exists
+
+# Setup path
 ROOT_DIR = dirname(dirname(abspath(__file__)))
 sys.path.append(ROOT_DIR)
 
-from proT_pipeline.data_loader import get_processes
-from proT_pipeline.core.labels import *
-from proT_pipeline._old.level_sequences import *
 
-INPUT_DIR = join(ROOT_DIR,"data/input/")
-INTERMEDIATE_DIR = join(ROOT_DIR,"data/intermediate/")
-TEST_DIR = join(ROOT_DIR,"data/test/")
-filename_sel  = join(INTERMEDIATE_DIR, "lookup_selected.xlsx")
-
-#load processes
-_, processes = get_processes(INPUT_DIR,filename_sel)
-print(1)
-#load processes
-df_pc = pd.read_csv(join(INTERMEDIATE_DIR,"x_prochain.csv"), sep=",")
-print(2)
-design = 453828
-version = "B"
-
-df_pc = df_pc.set_index([input_design_label,input_version_label]).loc[design].loc[version].reset_index()
-df_pc[input_design_label] = design
-
-templates_dict = get_template(df=df_pc,processes=processes)
-print(3)
-
-sel_template = templates_dict[design][version]
-
-df_templates = None
+def test_level_sequences():
+    """
+    Test level sequence functionality.
     
-        
+    NOTE: The original level_sequences module has been deprecated.
+    This functionality is now handled differently in the pipeline.
+    """
+    print("=" * 60)
+    print("LEVEL SEQUENCES TEST")
+    print("=" * 60)
+    print()
+    print("NOTE: This test references deprecated functionality.")
+    print("The level_sequences module has been refactored.")
+    print()
+    print("For current sequence processing, use:")
+    print("  - proT_pipeline.input_processing.assemble_raw")
+    print("  - proT_pipeline.input_processing.process_raw")
+    print("  - proT_pipeline.core.sequencer")
+    print()
+    print("Test skipped - module deprecated.")
 
-df_template = pd.DataFrame.from_dict({(i,j): sel_template[i][j] 
-                           for i in sel_template.keys() 
-                           for j in sel_template[i].keys()},orient="index")
 
-
-df_lev,max_len,templates = level_sequences(df=df_pc,processes=processes,save_dir=TEST_DIR)
+if __name__ == "__main__":
+    test_level_sequences()

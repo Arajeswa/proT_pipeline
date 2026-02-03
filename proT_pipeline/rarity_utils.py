@@ -356,7 +356,8 @@ def compute_rarity_nan_fraction(
     group_id_label: str,
     value_label: str,
     n_bins: int = 50,
-    keep_intermediate: bool = False
+    keep_intermediate: bool = False,
+    tag: str = ""
 ) -> pd.DataFrame:
     """
     Compute rarity based on the fraction of NaN values in the sequence.
@@ -447,21 +448,21 @@ def compute_rarity_nan_fraction(
     
     # Compute rarity scores using histogram-based binning
     rarity_scores = compute_rarity(result_df['nan_fraction'].values, n_bins=n_bins)
-    result_df['rarity_nan_fraction'] = rarity_scores
+    result_df[f'rarity_nan_fraction_{tag}'] = rarity_scores
     
     # Log statistics
     logger.info(f"Rarity statistics:")
     logger.info(f"  nan_fraction: min={result_df['nan_fraction'].min():.3f}, "
                 f"max={result_df['nan_fraction'].max():.3f}, "
                 f"mean={result_df['nan_fraction'].mean():.3f}")
-    logger.info(f"  rarity_nan_fraction: min={result_df['rarity_nan_fraction'].min():.3f}, "
-                f"max={result_df['rarity_nan_fraction'].max():.3f}, "
-                f"mean={result_df['rarity_nan_fraction'].mean():.3f}")
+    logger.info(f"  rarity_nan_fraction: min={result_df[f'rarity_nan_fraction_{tag}'].min():.3f}, "
+                f"max={result_df[f'rarity_nan_fraction_{tag}'].max():.3f}, "
+                f"mean={result_df[f'rarity_nan_fraction_{tag}'].mean():.3f}")
     
     # Select output columns
     if keep_intermediate:
-        result_df = result_df[[group_id_label, 'nan_fraction', 'rarity_nan_fraction']]
+        result_df = result_df[[group_id_label, 'nan_fraction', f'rarity_nan_fraction_{tag}']]
     else:
-        result_df = result_df[[group_id_label, 'rarity_nan_fraction']]
+        result_df = result_df[[group_id_label, f'rarity_nan_fraction_{tag}']]
     
     return result_df
