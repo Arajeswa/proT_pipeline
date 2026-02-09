@@ -1,20 +1,18 @@
 import numpy as np
 import pandas as pd
 import logging
+from proT_pipeline.labels import csv_low_memory
 
 
-def safe_read_csv(filepath, chunksize_fallback=50000, **kwargs):
+def safe_read_csv(filepath, low_memory=None, **kwargs):
     """
     Memory-safe wrapper for pd.read_csv.
     
-    First attempts to read with low_memory=False for optimal dtype inference.
-    If a MemoryError occurs (e.g., on low-RAM laptops), falls back to chunked
-    reading which uses less memory at the cost of slower performance.
-    
     Args:
         filepath: Path to CSV file
-        chunksize_fallback: Number of rows per chunk when using fallback mode.
-            Default: 50000 rows per chunk.
+        low_memory: Controls pandas low_memory option.
+            Default: Uses csv_low_memory from labels.py (True by default)
+            Set to False for better dtype inference (requires more RAM)
         **kwargs: All other arguments passed to pd.read_csv (sep, header, skiprows, etc.)
     
     Returns:
@@ -22,24 +20,16 @@ def safe_read_csv(filepath, chunksize_fallback=50000, **kwargs):
     
     Example:
         >>> df = safe_read_csv("data.csv", sep=";", header=5)
-        >>> df = safe_read_csv("large_file.csv", chunksize_fallback=10000)
+        >>> df = safe_read_csv("large_file.csv", low_memory=False)  # For high-RAM machines
     """
-    logger = logging.getLogger(__name__)
+    # Use global setting from labels.py if not explicitly provided
+    if low_memory is None:
+        low_memory = csv_low_memory
     
-    # Remove low_memory from kwargs if present (we control it)
+    # Remove low_memory from kwargs if passed there (we control it via parameter)
     kwargs.pop('low_memory', None)
     
-    try:
-        # First try with low_memory=False for best dtype inference
-        return pd.read_csv(filepath, low_memory=False, **kwargs)
-    except MemoryError:
-        logger.warning(
-            f"MemoryError loading {filepath}. "
-            f"Falling back to chunked reading with chunksize={chunksize_fallback}. "
-            f"This may be slower but uses less memory."
-        )
-        chunks = pd.read_csv(filepath, chunksize=chunksize_fallback, **kwargs)
-        return pd.concat(chunks, ignore_index=True)
+    return pd.read_csv(filepath, low_memory=low_memory, **kwargs)
 
 
 def fix_duplicate_columns(df:pd.DataFrame)->None:

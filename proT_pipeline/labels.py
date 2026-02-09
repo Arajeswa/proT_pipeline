@@ -227,6 +227,12 @@ templates_variable_label = input_variable_label
 # GENERAL
 standard_sep = ","
 
+# CSV READING SETTINGS
+# Controls pandas low_memory option for read_csv
+# True (default): Safe for low-RAM machines, may produce dtype warnings
+# False: Better dtype inference, requires more RAM
+csv_low_memory = True
+
 # TRANSVERSAL FILES
 trans_missing_batches = "missing_batches.json"
 var_dict_filename = "variables_vocabulary.json"
