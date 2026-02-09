@@ -15,6 +15,7 @@ from os.path import join, exists, splitext
 from os import makedirs
 from typing import Union, List, Optional
 from datetime import datetime
+from proT_pipeline.utils import safe_read_csv
 
 
 def generate_ist_placeholders(
@@ -131,7 +132,7 @@ def _load_group_ids(
         _, ext = splitext(group_ids.lower())
         
         if ext == '.csv':
-            df = pd.read_csv(group_ids)
+            df = safe_read_csv(group_ids)
             if id_file_column not in df.columns:
                 # Try first column if specified column doesn't exist
                 id_file_column = df.columns[0]

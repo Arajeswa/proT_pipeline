@@ -12,7 +12,7 @@ sys.path.append(ROOT_DIR)
 from omegaconf import OmegaConf
 
 from proT_pipeline.core.modules import Process, get_df_lookup
-from proT_pipeline.utils import fix_format_columns
+from proT_pipeline.utils import fix_format_columns, safe_read_csv
 import pandas as pd
 from proT_pipeline.labels import *
 
@@ -152,7 +152,7 @@ def get_processes(input_data_path,filename_sel, grouping_method: str, grouping_c
     return processes_list, processes
 
 def get_booking(input_data_path):
-    df_book = fix_format_columns(pd.read_csv(join(input_data_path,"booking.csv"),sep=";"))
+    df_book = fix_format_columns(safe_read_csv(join(input_data_path,"booking.csv"),sep=";"))
     df_book["Timestamp"] = pd.to_datetime(df_book["Timestamp"],format = "%m/%d/%y %I:%M %p")
     
     return df_book

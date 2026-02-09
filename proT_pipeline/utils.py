@@ -1,5 +1,46 @@
 import numpy as np
 import pandas as pd
+import logging
+
+
+def safe_read_csv(filepath, chunksize_fallback=50000, **kwargs):
+    """
+    Memory-safe wrapper for pd.read_csv.
+    
+    First attempts to read with low_memory=False for optimal dtype inference.
+    If a MemoryError occurs (e.g., on low-RAM laptops), falls back to chunked
+    reading which uses less memory at the cost of slower performance.
+    
+    Args:
+        filepath: Path to CSV file
+        chunksize_fallback: Number of rows per chunk when using fallback mode.
+            Default: 50000 rows per chunk.
+        **kwargs: All other arguments passed to pd.read_csv (sep, header, skiprows, etc.)
+    
+    Returns:
+        pd.DataFrame: The loaded dataframe
+    
+    Example:
+        >>> df = safe_read_csv("data.csv", sep=";", header=5)
+        >>> df = safe_read_csv("large_file.csv", chunksize_fallback=10000)
+    """
+    logger = logging.getLogger(__name__)
+    
+    # Remove low_memory from kwargs if present (we control it)
+    kwargs.pop('low_memory', None)
+    
+    try:
+        # First try with low_memory=False for best dtype inference
+        return pd.read_csv(filepath, low_memory=False, **kwargs)
+    except MemoryError:
+        logger.warning(
+            f"MemoryError loading {filepath}. "
+            f"Falling back to chunked reading with chunksize={chunksize_fallback}. "
+            f"This may be slower but uses less memory."
+        )
+        chunks = pd.read_csv(filepath, chunksize=chunksize_fallback, **kwargs)
+        return pd.concat(chunks, ignore_index=True)
+
 
 def fix_duplicate_columns(df:pd.DataFrame)->None:
     """Fixes n-times repeated names from a pandas DataFrame adding a suffix "_n"

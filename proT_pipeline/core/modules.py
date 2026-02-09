@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import logging
 from proT_pipeline.labels import *
+from proT_pipeline.utils import safe_read_csv
 from tqdm import tqdm
 import os
 from os.path import join
@@ -354,7 +355,7 @@ class Process():
         ext = ext.lower()
         
         if ext == '.csv':
-            self.df = pd.read_csv(join(input_data_path,self.filename),sep=self.sep, header=self.header,low_memory=False)
+            self.df = safe_read_csv(join(input_data_path,self.filename),sep=self.sep, header=self.header)
             self.flag = 1
         elif ext in ['.xls', '.xlsx', '.xlsm', '.xlsb', '.odf', '.ods', '.odt']:
             self.df = pd.read_excel(join(input_data_path,self.filename),header=self.header)

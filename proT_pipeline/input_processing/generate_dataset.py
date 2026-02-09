@@ -4,6 +4,7 @@ import logging
 from os.path import join, exists
 from os import mkdir
 from proT_pipeline.core.modules import explode_time_components, pandas_to_numpy_ds
+from proT_pipeline.utils import safe_read_csv
 import json
 from proT_pipeline.labels import *
 from proT_pipeline.rarity_utils import *
@@ -45,7 +46,7 @@ def generate_dataset(dataset_id):
     
     # Load input and target dataframes
     try:
-        df_trg = pd.read_csv(filepath_target, sep=target_sep)
+        df_trg = safe_read_csv(filepath_target, sep=target_sep)
     except FileNotFoundError:
         raise FileNotFoundError(
             f"Target file not found: {filepath_target}\n"

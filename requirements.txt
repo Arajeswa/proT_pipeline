@@ -17,6 +17,9 @@ pyarrow>=14.0.0
 # Progress bars
 tqdm>=4.65.0
 
+# Machine learning (for HSIC analysis)
+scikit-learn>=1.3.0
+
 # Jupyter notebook support (optional, for tutorials)
 jupyter>=1.0.0
 ipykernel>=6.0.0

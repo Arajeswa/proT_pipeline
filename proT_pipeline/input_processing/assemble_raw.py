@@ -4,6 +4,7 @@ import logging
 from proT_pipeline.input_processing.data_loader import get_processes
 from proT_pipeline.labels import *
 from proT_pipeline.core.modules import split_queries_by_keys
+from proT_pipeline.utils import safe_read_csv
 import json
 import re
 from os.path import join, exists
@@ -53,7 +54,7 @@ def assemble_raw(
 
     # Read target (IST) file
     try:
-        df_trg = pd.read_csv(filepath_target, sep=target_sep)
+        df_trg = safe_read_csv(filepath_target, sep=target_sep)
     except FileNotFoundError:
         raise FileNotFoundError(
             f"Target file not found: {filepath_target}\n"

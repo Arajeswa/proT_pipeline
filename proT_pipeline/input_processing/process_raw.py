@@ -4,6 +4,7 @@ from os.path import join
 import json
 from proT_pipeline.labels import *
 from proT_pipeline.core.modules import explode_time_components, filter_vars_max_missing
+from proT_pipeline.utils import safe_read_csv
 
 
 
@@ -30,7 +31,7 @@ def process_raw(dataset_id: str, missing_threshold: float = None)->None:
 
     # Load raw process data
     try:
-        df_raw = pd.read_csv(join(OUTPUT_DIR, trans_df_process_raw))
+        df_raw = safe_read_csv(join(OUTPUT_DIR, trans_df_process_raw))
     except FileNotFoundError:
         raise FileNotFoundError(
             f"Raw process file not found: {join(OUTPUT_DIR, trans_df_process_raw)}\n"

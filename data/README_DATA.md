@@ -4,7 +4,7 @@ This document describes the data structure required for the proT_pipeline to fun
 
 **⚠️ IMPORTANT**: The actual data files are confidential and not included in this repository.
 
-**[PLACEHOLDER: Contact project administrator for data access]**
+Data can be downloaded from [Polybox](https://polybox.ethz.ch/index.php/s/qr9XfqYRPYGMfSn), with authorization (contact [Francesco Scipione](fscipion@ethz.ch))
 
 ---
 

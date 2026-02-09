@@ -8,6 +8,7 @@ ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
 sys.path.append(ROOT_DIR)
 from proT_pipeline.target_processing.modules import *
 from proT_pipeline.labels import *
+from proT_pipeline.utils import safe_read_csv
 
 
 def get_df_num_unique(df:pd.DataFrame, column:str):
@@ -43,7 +44,7 @@ def main(
         datefmt="%Y-%m-%d %H:%M:%S")
     
 	# open ist data
-    df_ist = pd.read_csv(join(INPUT_DIR, target_filename_input), sep=target_original_sep, low_memory=False)
+    df_ist = safe_read_csv(join(INPUT_DIR, target_filename_input), sep=target_original_sep)
         
     # process ist data
     print("Processing ist dataframe...")
